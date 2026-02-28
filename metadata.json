@@ -1,0 +1,7 @@
+{
+  "name": "AgriSuri",
+  "description": "Isang monitoring app para sa mga magsasakang Pilipino. Gamit ang satellite data para masuri ang kalusugan ng pananim at lupa.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
