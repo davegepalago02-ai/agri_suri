@@ -5,6 +5,7 @@ import { recommendationEngine, AnalysisType } from './services/analysis';
 import { db, auth } from './services/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { AgriSuriLogo } from './components/Logo';
+import { AdminDashboard } from './components/AdminDashboard';
 import { 
   Map as MapIcon, 
   History, 
@@ -24,7 +25,8 @@ import {
   Trash2,
   Pencil,
   Check,
-  X
+  X,
+  BarChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -226,12 +228,24 @@ export default function App() {
     setIsSyncing(false);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (regName.trim() && regPhone.trim()) {
       const newUser = storageService.saveUserProfile({ name: regName.trim(), phone: regPhone.trim() });
       setUser(newUser);
       setShowWelcome(true);
+      
+      // Save to Firestore for analytics
+      try {
+        await addDoc(collection(db, "users"), {
+          name: regName.trim(),
+          phone: regPhone.trim(),
+          registeredAt: Date.now()
+        });
+        fetchUserStats();
+      } catch (e) {
+        console.error("Error saving user to Firestore:", e);
+      }
     }
   };
 
@@ -239,6 +253,8 @@ export default function App() {
     storageService.logoutUser();
     setUser(null);
   };
+
+  const isAdmin = user?.name.toLowerCase() === 'admin' || user?.phone === '09999999999';
 
   if (!user) {
     return (
@@ -318,6 +334,15 @@ export default function App() {
               <span className="text-[10px] uppercase font-bold opacity-60">Aktibong Magsasaka</span>
               <span className="text-xl font-black text-agri-accent">{totalFarmers.toLocaleString()}</span>
             </div>
+            {isAdmin && (
+              <button 
+                onClick={() => setActiveTab('stats')}
+                className={`p-2 rounded-full transition-colors ${activeTab === 'stats' ? 'bg-white text-agri-green' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                title="Admin Dashboard"
+              >
+                <BarChart className="w-5 h-5" />
+              </button>
+            )}
             <button 
               onClick={handleLogout}
               className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
@@ -445,7 +470,8 @@ export default function App() {
             {[
               { id: 'map', icon: MapIcon, label: 'Mapa' },
               { id: 'results', icon: ClipboardList, label: 'Resulta' },
-              { id: 'history', icon: History, label: 'Bukid' }
+              { id: 'history', icon: History, label: 'Bukid' },
+              ...(isAdmin ? [{ id: 'stats', icon: BarChart, label: 'Analytics' }] : [])
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -461,6 +487,11 @@ export default function App() {
               </button>
             ))}
           </nav>
+        )}
+
+        {/* Admin Dashboard */}
+        {activeTab === 'stats' && (
+          <AdminDashboard />
         )}
 
         <AnimatePresence mode="wait">
