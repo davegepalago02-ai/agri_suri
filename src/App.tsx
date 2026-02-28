@@ -56,11 +56,15 @@ export default function App() {
   });
 
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
 
   useEffect(() => {
-    setUser(storageService.getUserProfile());
+    const profile = storageService.getUserProfile();
+    setUser(profile);
+    // If user exists but hasn't seen welcome message (we can track this with a flag or just show it on first load after register)
+    // For simplicity, we'll show it right after registration
     setFields(storageService.getFields());
     fetchUserStats();
     
@@ -227,6 +231,7 @@ export default function App() {
     if (regName.trim() && regPhone.trim()) {
       const newUser = storageService.saveUserProfile({ name: regName.trim(), phone: regPhone.trim() });
       setUser(newUser);
+      setShowWelcome(true);
     }
   };
 
@@ -333,6 +338,62 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 space-y-6 pb-24">
         
+        {/* Welcome Modal */}
+        <AnimatePresence>
+          {showWelcome && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowWelcome(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 overflow-hidden"
+              >
+                <div className="p-8 text-center">
+                  <div className="w-20 h-20 bg-agri-green/10 text-agri-green rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AgriSuriLogo className="w-10 h-10" />
+                  </div>
+                  <h2 className="text-3xl font-black text-stone-800 uppercase italic mb-2">Mabuhay, {user.name}!</h2>
+                  <p className="text-stone-500 font-medium text-sm mb-6">Maligayang pagdating sa AgriSuri.</p>
+                  
+                  <div className="text-left space-y-4 mb-8 bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                    <p className="text-sm text-stone-700 leading-relaxed font-medium">
+                      Ang <strong className="text-agri-green font-black uppercase">AgriSuri</strong> ay isang matalinong katuwang ng mga magsasakang Pilipino.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <MapIcon className="w-5 h-5 text-agri-green shrink-0 mt-0.5" />
+                        <span className="text-xs text-stone-600 font-medium leading-relaxed">I-mapa ang iyong bukid gamit ang GPS o manual na pagguhit.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Activity className="w-5 h-5 text-agri-green shrink-0 mt-0.5" />
+                        <span className="text-xs text-stone-600 font-medium leading-relaxed">Suriin ang kalusugan ng pananim, moisture ng lupa, at pangangailangan sa abono gamit ang AI.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Users className="w-5 h-5 text-agri-green shrink-0 mt-0.5" />
+                        <span className="text-xs text-stone-600 font-medium leading-relaxed">Maging bahagi ng lumalaking komunidad ng mga makabagong magsasaka.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <button 
+                    onClick={() => setShowWelcome(false)}
+                    className="w-full py-4 bg-agri-green text-white rounded-2xl font-black uppercase italic tracking-wider shadow-lg hover:bg-[#115e41] transition-all"
+                  >
+                    Simulan ang Pagsusuri
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {/* Confirmation Modal */}
         <AnimatePresence>
           {confirmModal.show && (
