@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AgriMap } from './components/Map';
-import { storageService, FieldPolygon, AnalysisResult } from './services/storage';
+import { storageService, FieldPolygon, AnalysisResult, UserProfile } from './services/storage';
 import { recommendationEngine, AnalysisType } from './services/analysis';
 import { db, auth } from './services/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
@@ -55,7 +55,12 @@ export default function App() {
     onConfirm: () => {}
   });
 
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [regName, setRegName] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+
   useEffect(() => {
+    setUser(storageService.getUserProfile());
     setFields(storageService.getFields());
     fetchUserStats();
     
@@ -217,6 +222,70 @@ export default function App() {
     setIsSyncing(false);
   };
 
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (regName.trim() && regPhone.trim()) {
+      const newUser = storageService.saveUserProfile({ name: regName.trim(), phone: regPhone.trim() });
+      setUser(newUser);
+    }
+  };
+
+  const handleLogout = () => {
+    storageService.logoutUser();
+    setUser(null);
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center font-sans p-4">
+        <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl border border-stone-100">
+          <div className="flex flex-col items-center mb-8">
+            <div className="bg-agri-green p-4 rounded-3xl shadow-lg mb-4">
+              <AgriSuriLogo className="w-16 h-16 text-white" />
+            </div>
+            <h1 className="text-3xl font-black tracking-tighter uppercase italic text-stone-800">
+              <span className="text-agri-green">Agri</span>Suri
+            </h1>
+            <p className="text-xs font-bold text-stone-500 uppercase tracking-widest mt-2 text-center">
+              Matalinong Pagsusuri, Masaganang Pag-aani
+            </p>
+          </div>
+
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-xs font-black text-stone-600 uppercase mb-1">Pangalan</label>
+              <input 
+                type="text" 
+                required
+                value={regName}
+                onChange={(e) => setRegName(e.target.value)}
+                placeholder="Juan Dela Cruz"
+                className="w-full p-4 bg-stone-50 border border-stone-200 rounded-2xl font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-agri-green focus:border-transparent transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-black text-stone-600 uppercase mb-1">Numero ng Telepono</label>
+              <input 
+                type="tel" 
+                required
+                value={regPhone}
+                onChange={(e) => setRegPhone(e.target.value)}
+                placeholder="0912 345 6789"
+                className="w-full p-4 bg-stone-50 border border-stone-200 rounded-2xl font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-agri-green focus:border-transparent transition-all"
+              />
+            </div>
+            <button 
+              type="submit"
+              className="w-full py-4 bg-agri-green text-white rounded-2xl font-black uppercase italic tracking-wider shadow-lg hover:bg-[#115e41] transition-all mt-4"
+            >
+              Mag-rehistro
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col font-sans">
       {/* Header */}
@@ -236,7 +305,7 @@ export default function App() {
                 <span className="text-[#022c22]">Agri</span>
                 <span className="text-white">Suri</span>
               </h1>
-              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-1">Matalinong Pagsusuri, Masaganang Pag-aani</p>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-1">Mabuhay, {user.name}!</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -244,6 +313,13 @@ export default function App() {
               <span className="text-[10px] uppercase font-bold opacity-60">Aktibong Magsasaka</span>
               <span className="text-xl font-black text-agri-accent">{totalFarmers.toLocaleString()}</span>
             </div>
+            <button 
+              onClick={handleLogout}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+              title="Mag-logout"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <button 
               onClick={syncData}
               className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors ${isSyncing ? 'animate-spin' : ''}`}

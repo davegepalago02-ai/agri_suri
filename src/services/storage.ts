@@ -27,9 +27,31 @@ export interface FieldPolygon {
   analyses: AnalysisResult[];
 }
 
+export interface UserProfile {
+  name: string;
+  phone: string;
+  registeredAt: number;
+}
+
 const STORAGE_KEY = 'agrisuri_fields';
+const USER_KEY = 'agrisuri_user';
 
 export const storageService = {
+  getUserProfile: (): UserProfile | null => {
+    const data = localStorage.getItem(USER_KEY);
+    return data ? JSON.parse(data) : null;
+  },
+  
+  saveUserProfile: (profile: Omit<UserProfile, 'registeredAt'>): UserProfile => {
+    const newProfile = { ...profile, registeredAt: Date.now() };
+    localStorage.setItem(USER_KEY, JSON.stringify(newProfile));
+    return newProfile;
+  },
+
+  logoutUser: () => {
+    localStorage.removeItem(USER_KEY);
+  },
+
   saveField: (geojson: any, name: string): FieldPolygon => {
     const area = turf.area(geojson) / 10000; // Convert m2 to hectares
     const newField: FieldPolygon = {
