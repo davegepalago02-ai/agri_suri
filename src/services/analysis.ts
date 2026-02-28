@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import * as turf from '@turf/turf';
 import { AnalysisZone } from "./storage";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || "" });
 
 export type AnalysisType = 'health' | 'moisture' | 'fertilizer';
 
@@ -74,6 +74,9 @@ export const recommendationEngine = {
     }
 
     try {
+      if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        throw new Error("Missing API Key");
+      }
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
@@ -84,11 +87,13 @@ export const recommendationEngine = {
         zones
       };
     } catch (e) {
+      console.error("AI Error:", e);
       return { 
         status: overallStatus, 
-        advice: "Paumanhin, hindi makakonekta sa AI ngayon. Ngunit nakita namin ang ilang stress sa iyong bukid.",
+        advice: "Paumanhin, hindi makakonekta sa AI ngayon. Siguraduhing nakalagay ang iyong VITE_GEMINI_API_KEY sa .env file.",
         zones
       };
     }
   }
 };
+
